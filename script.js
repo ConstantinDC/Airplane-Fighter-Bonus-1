@@ -42,7 +42,7 @@ function resetTimer() {
 function startTimer() {
     resetTimer();
     timerInterval = setInterval(() => {
-        elapsedSeconds += 1;
+        ++elapsedSeconds;
         updateTimerDisplay();
     }, 1000);
 }
