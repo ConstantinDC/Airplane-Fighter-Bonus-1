@@ -22,7 +22,6 @@ let elapsedSeconds = 0;
 let gameRunning = false;
 
 let avoidedEnemies = 0;
-let avoided = false;
 
 function formatTime(seconds) {
     const minutes = Math.floor(seconds / 60);
@@ -60,16 +59,20 @@ function stopGame() {
     stopTimer();
 }
 
+function generateEnemy() {
+    enemies.push({
+        x: canvas.width,
+        y: Math.random() * (canvas.height - enemySize),
+        size: enemySize,
+        color: '#ff0000',
+        avoided: false
+    })
+}
+
 function generateEnemies() {
     const numEnemies = Math.floor(Math.random() * 5) + 1;
     for (let i = 0; i < numEnemies; i++) {
-        enemies.push({
-            x: canvas.width,
-            y: Math.random() * (canvas.height - enemySize),
-            size: enemySize,
-            color: '#ff0000',
-            avoided: false
-        });
+        generateEnemy();
     }
 }
 
