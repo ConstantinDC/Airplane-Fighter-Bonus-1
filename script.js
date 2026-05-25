@@ -1,7 +1,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const timerElement = document.getElementById('timer');
-const counterEnemies = document.getElementById('counter');
+const counterAvoidedEnemies = document.getElementById('counter');
+const counterDestroyedEnemies = document.getElementById('enemies');
 
 const airplane = {
     x: 50,
@@ -15,6 +16,10 @@ const enemies = [];
 const enemySize = 20;
 const enemySpeed = 2;
 
+const bullets = [];
+const bulletSize = 5;
+const bulletSpeed = 7;
+
 let keys = {};
 let gameOver = false;
 let timerInterval = null;
@@ -22,6 +27,7 @@ let elapsedSeconds = 0;
 let gameRunning = false;
 
 let avoidedEnemies = 0;
+let destroyedEnemies = 0;
 
 function formatTime(seconds) {
     const minutes = Math.floor(seconds / 60);
@@ -66,7 +72,7 @@ function generateEnemy() {
         size: enemySize,
         color: '#ff0000',
         avoided: false
-    })
+    });
 }
 
 function generateEnemies() {
@@ -76,6 +82,15 @@ function generateEnemies() {
     }
 }
 
+function generateBullet() {
+    bullets.push({
+        x: airplane.x + airplane.size,
+        y: airplane.y + airplane.size / 2 - bulletSize / 2,
+        size: bulletSize,
+        color: '#bdece1'
+    }); 
+}
+
 function isColliding(a, b) {
     return a.x < b.x + b.size &&
            a.x + a.size > b.x &&
@@ -83,17 +98,30 @@ function isColliding(a, b) {
            a.y + a.size > b.y;
 }
 
-function resetCounterDisplay() {
+function resetAvoidedEnemiesDisplay() {
     avoidedEnemies = 0;
-    updateScoreDisplay();
+    updateAvoidedEnemiesDisplay();
 }
 
-function updateScoreDisplay() {
-    counterEnemies.textContent = `Score: ${avoidedEnemies}`;
+function resetDestroyedEnemiesDisplay() {
+    destroyedEnemies = 0;
+    updateDestroyedEnemiesDisplay();
+}
+
+function updateAvoidedEnemiesDisplay() {
+    counterAvoidedEnemies.textContent = `Avoided: ${avoidedEnemies}`;
+}
+
+function updateDestroyedEnemiesDisplay() {
+    counterDestroyedEnemies.textContent = `Destroyed: ${destroyedEnemies}`;
 }
 
 function isAvoiding(a, b) {
     return !b.avoided && b.x + b.size < a.x;
+}
+
+function isDestroyed(a, b) {
+    return isColliding(a, b);
 }
 
 function countAvoidings() {
@@ -101,7 +129,7 @@ function countAvoidings() {
         if (isAvoiding(airplane, enemy)) {
             enemy.avoided = true;
             avoidedEnemies++;
-            updateScoreDisplay();
+            updateAvoidedEnemiesDisplay();
         }
     }
 }
@@ -113,6 +141,21 @@ function checkCollisions() {
             gameRunning = false;
             stopTimer();
             break;
+        }
+    }
+}
+
+function countBulletEnemyCollisions() {
+    for (let i = 0; i < bullets.length; i++) {
+        for (let j = 0; j < enemies.length; j++) {
+            if (isDestroyed(bullets[i], enemies[j])) {
+                ++destroyedEnemies;
+                updateDestroyedEnemiesDisplay();
+                bullets.splice(i, 1);
+                enemies.splice(j, 1);
+                i--;
+                break;
+            }
         }
     }
 }
@@ -135,6 +178,8 @@ function update() {
     checkCollisions();
     
     countAvoidings();
+
+    countBulletEnemyCollisions();
 }
 
 function draw() {
@@ -146,6 +191,12 @@ function draw() {
     enemies.forEach(enemy => {
         ctx.fillStyle = enemy.color;
         ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+    });
+
+    bullets.forEach(bullet => {
+        ctx.fillStyle = bullet.color;
+        ctx.fillRect(bullet.x, bullet.y, bullet.size, bullet.size);
+        bullet.x += bulletSpeed;
     });
 
     if (gameOver) {
@@ -200,16 +251,25 @@ window.addEventListener('keyup', (e) => {
     }
 });
 
+window.addEventListener('keypress', (e) => {
+    if (e.key === ' ') {
+        generateBullet();
+        e.preventDefault();
+    }
+}); 
+
 function startGame() {
     gameOver = false;
     gameRunning = true;
     airplane.x = 50;
     airplane.y = 50;
     enemies.splice(0, enemies.length);
+    bullets.splice(0, bullets.length);
     keys = {};
     resetTimer();
     startTimer();
-    resetCounterDisplay();
+    resetAvoidedEnemiesDisplay();
+    resetDestroyedEnemiesDisplay();
     gameLoop();
 }
 
